@@ -1,32 +1,44 @@
 "use strict";
-var __extends = (this && this.__extends) || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-};
+Object.defineProperty(exports, "__esModule", { value: true });
 var aurelia_route_recognizer_1 = require("aurelia-route-recognizer");
-var RouteMapper = (function (_super) {
-    __extends(RouteMapper, _super);
+var RouteMapper = (function () {
     function RouteMapper() {
-        _super.apply(this, arguments);
+        this.routeRecognizer = new aurelia_route_recognizer_1.RouteRecognizer();
     }
-    RouteMapper.prototype.map = function (routes, parentName, parentRoute) {
+    RouteMapper.prototype.map = function (routes, parentName) {
         var _this = this;
         if (parentName === void 0) { parentName = ''; }
-        if (parentRoute === void 0) { parentRoute = ''; }
         routes.forEach(function (config) {
             var name = parentName ? parentName + "/" + config.name : config.name;
-            var path = parentRoute + config.route;
-            _this.add({
-                path: path,
-                handler: { name: name },
-                caseSensitive: config.caseSensitive === true
+            var path = config.route;
+            var paths = [];
+            if (typeof (path) == 'string')
+                paths.push(path);
+            else
+                paths = path;
+            paths.forEach(function (path) {
+                _this.routeRecognizer.add({
+                    path: path,
+                    handler: { name: name },
+                    caseSensitive: config.caseSensitive === true
+                });
+                if (config.settings && config.settings.childRoutes) {
+                    _this.map(config.settings.childRoutes, name);
+                }
             });
-            if (config.settings && config.settings.childRoutes) {
-                _this.map(config.settings.childRoutes, name, path);
-            }
         });
     };
+    /**
+     * usage: this.routeMapper.generateChildRoute([{ routeName: 'category', params: { id: 12 } }, { routeName: 'product', params: { id: 2 } }]);
+     */
+    RouteMapper.prototype.generateChildRoute = function (routes) {
+        var _this = this;
+        var routeName = '';
+        return routes.map(function (route) {
+            routeName = routeName ? routeName + "/" + route.routeName : route.routeName;
+            return _this.routeRecognizer.generate(routeName, route.params);
+        }).join('');
+    };
     return RouteMapper;
-}(aurelia_route_recognizer_1.RouteRecognizer));
+}());
 exports.RouteMapper = RouteMapper;
